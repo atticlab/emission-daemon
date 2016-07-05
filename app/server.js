@@ -1,0 +1,146 @@
+var config = require('./config'),
+    errors = require('./inc/errors'),
+    myerrors = require('./inc/innererrors'),
+    colors = require('colors'),
+    auth = require('basic-auth'),
+    bodyParser = require('body-parser'),
+    express = require('express'),
+    prompt = require('prompt'),
+    tools = require('./inc/tools'),
+    StellarSdk = require('stellar-sdk');
+
+var horizon;
+var emission_key;
+
+function innerError(error_type, error_code, error_text) {
+    var e = new Error();
+    e.innerType     = 'inner';
+    e.type          = error_type;
+    e.code          = error_code;
+    e.msg           = error_text;
+
+    throw e;
+}
+
+var app = express();
+app.use(bodyParser.urlencoded({
+    extended: true
+}));
+app.use(bodyParser.json());
+
+app.use(function(req, res, next) {
+    var user = auth(req);
+
+    if (!user || user['name'] !== config.auth.user || user['pass'] !== config.auth.password) {
+        console.log(colors.red('Unauthorized request'));
+
+        return errorResponse(res, errors.TYPE_NATIVE, errors.ERR_UNAUTHORIZED, 'Unauthorized request');
+    } else {
+        next();
+    }
+});
+
+app.post('/issue', function(req, res) {
+    var dist_manager_account = req.body.accountId;
+    var amount = req.body.amount;
+    var asset  = req.body.asset;
+
+    if (!StellarSdk.Keypair.isValidPublicKey(dist_manager_account)) {
+        return errorResponse(res, errors.TYPE_NATIVE, errors.ERR_BAD_PARAM, '[accountId] param is invalid');
+    }
+
+    // Check positive document amount
+    if (amount >>> 0 !== parseFloat(amount)) {
+        return errorResponse(res, errors.TYPE_NATIVE, errors.ERR_BAD_PARAM, '[amount] param is not a positive int');
+    }
+
+    if (!asset.length) {
+        return errorResponse(res, errors.TYPE_NATIVE, errors.ERR_BAD_PARAM, '[asset] param is empty');
+    }
+
+    // Load agent account
+    horizon.loadAccount(dist_manager_account)
+
+    // get account info
+    .then(account => {
+        return horizon.accounts().accountId(account._accountId).call()
+    })
+    // verify agent type
+    .then(accountDetails => {
+        if(accountDetails.type_i != StellarSdk.xdr.AccountType.accountDistributionAgent().value){
+            return innerError(errors.TYPE_STELLAR, errors.ERR_BAD_AGENT_TYPE, 'BAD AGENT TYPE');
+        }
+    })
+
+    // TODO: verify incoming restriction for agent account
+    // TODO: verify max operation limit for agent account
+    // TODO: verify max day operation limit for agent account
+    // TODO: verify max montly operation limit for agent account
+
+    // Load bank account
+    .then(() => {
+        return horizon.loadAccount(config.bank_public_key)
+    })
+
+    // Issue some money
+    .then(source => {
+        var tx = new StellarSdk.TransactionBuilder(source)
+            .addOperation(StellarSdk.Operation.payment({
+                destination: dist_manager_account,
+                amount: parseFloat(amount).toFixed(2).toString(),
+                asset: new StellarSdk.Asset(asset, source.accountId())
+            }))
+            .build();
+
+        tx.sign(emission_key);
+        return horizon.submitTransaction(tx)
+    })
+
+    .then(tx => {
+        console.log("Emission successful to " + dist_manager_account);
+        res.status(200).json({
+            tx_hash: tx.hash
+        });
+    })
+
+    .catch (err => {
+        console.log(err.message);
+        if(err.innerType == 'inner'){
+            return errorResponse(res, err.type, err.code, err.msg);
+        } else {
+            outerError = myerrors.getProtocolError(err.type);
+            return errorResponse(res, outerError.type, outerError.code, outerError.msg);
+        }
+    })
+});
+
+prompt.start();
+prompt.get({
+    description: 'Enter emission key password',
+    name: 'key',
+    hidden: true,
+}, function(err, result) {
+    var key = tools.decryptData(config.emission_key_hash, result.key);
+    if (!key) {
+        console.error(colors.red('WRONG PASSWORD KEY! Shutting down...'));
+    }
+
+    horizon = new StellarSdk.Server(config.horizon_url);
+    emission_key = StellarSdk.Keypair.fromSeed(key);
+
+    horizon.loadAccount(config.bank_public_key)
+        .then(source => {
+            app.listen(config.app.port);
+            console.log(colors.green('Listening on port ' + config.app.port));
+        }, err => {
+            console.log(colors.red('Cannot load bank_accout from Stellar'));
+        })
+});
+
+function errorResponse(res, type, code, msg) {
+    return res.status(400).json({
+        err_msg: typeof msg == 'undefined'? '' : msg,
+        err_type: type,
+        err_code: code
+    });
+}
