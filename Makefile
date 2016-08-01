@@ -9,23 +9,10 @@ list:
 # Docker machine states
 #############################
 
-start:
-	docker-compose start
-
 stop:
-	docker-compose stop
-
-state:
-	docker-compose ps
+	docker stop smartmoney-emission-node
 
 build:
-	docker build -t smartmoney/emission_node .
-	docker run --restart=always -it -p 5050:5050 smartmoney/emission_node
+	docker build -t smartmoney/emission/node  .
+	docker run --restart=always  -it -p 5050:5050 --name smartmoney-emission-node smartmoney/emission/node
 
-attach:
-	docker exec -i -t ${c} /bin/bash
-
-purge:
-	docker stop $(CONTAINERS)
-	docker rm $(CONTAINERS)
-	docker volume rm $(VOLUMES)
