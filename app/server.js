@@ -82,7 +82,7 @@ app.post('/issue', function(req, res) {
         //check agent incoming restrictions
         .then(function (traits) {
             if (traits.block_incoming_payments == true) {
-                return innerError(errors.TYPE_STELLAR, errors.ERR_OPERATION_IN_BLOCK, 'OPERATION IN BLOCK');
+                return innerError(errors.TYPE_STELLAR, errors.OP_BLOCKED, 'OPERATION BLOCK');
             }
         })
         // get limits
@@ -102,7 +102,7 @@ app.post('/issue', function(req, res) {
                         //-1 is no limit
                         if(limits[key].max_operation_in > -1) {
                             if (limits[key].max_operation_in < amount) {
-                                return innerError(errors.TYPE_STELLAR, errors.ERR_MAX_OPERATION_IN_LIMIT, 'MAX OPERATION IN LIMIT IS EXCEEDED');
+                                return innerError(errors.TYPE_STELLAR, errors.ERR_MAX_OPERATION_LIMIT, 'MAX OPERATION LIMIT IS EXCEEDED');
                             }
                         }
 
@@ -145,7 +145,7 @@ app.post('/issue', function(req, res) {
             if (setted_limits.daily > -1) {
                 if (setted_limits.daily < used_limits.daily + amount) {
                     //daily limit is EXCEEDED
-                    return innerError(errors.TYPE_STELLAR, errors.ERR_DAILY_OPERATION_IN_LIMIT, 'DAILY OPERATION IN LIMIT IS EXCEEDED');
+                    return innerError(errors.TYPE_STELLAR, errors.ERR_DAILY_OPERATION_LIMIT, 'DAILY OPERATION LIMIT IS EXCEEDED');
                 }
             }
 
@@ -153,7 +153,7 @@ app.post('/issue', function(req, res) {
             if (setted_limits.monthly > -1) {
                 if (setted_limits.monthly < used_limits.monthly + amount) {
                     //monthly limit is EXCEEDED
-                    return innerError(errors.TYPE_STELLAR, errors.ERR_MONTHLY_OPERATION_IN_LIMIT, 'MONTHLY OPERATION IN LIMIT IS EXCEEDED');
+                    return innerError(errors.TYPE_STELLAR, errors.ERR_MONTHLY_OPERATION_LIMIT, 'MONTHLY OPERATION LIMIT IS EXCEEDED');
                 }
             }
 
