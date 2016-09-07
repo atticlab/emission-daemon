@@ -45,8 +45,16 @@ app.post('/issue', function(req, res) {
     var amount = req.body.amount;
     var asset  = req.body.asset;
 
+    if (typeof dist_manager_account == 'undefined' || !dist_manager_account) {
+        return errorResponse(res, errors.TYPE_NATIVE, errors.ERR_EMPTY_PARAM, '[accountId] param is empty');
+    }
+
     if (!StellarSdk.Keypair.isValidPublicKey(dist_manager_account)) {
         return errorResponse(res, errors.TYPE_NATIVE, errors.ERR_BAD_PARAM, '[accountId] param is invalid');
+    }
+
+    if (typeof amount == 'undefined' || !amount) {
+        return errorResponse(res, errors.TYPE_NATIVE, errors.ERR_EMPTY_PARAM, '[amount] param is empty');
     }
 
     // Check positive document amount
@@ -54,8 +62,8 @@ app.post('/issue', function(req, res) {
         return errorResponse(res, errors.TYPE_NATIVE, errors.ERR_BAD_PARAM, '[amount] param is not a positive int');
     }
 
-    if (!asset.length) {
-        return errorResponse(res, errors.TYPE_NATIVE, errors.ERR_BAD_PARAM, '[asset] param is empty');
+    if (typeof asset == 'undefined' || !asset.length) {
+        return errorResponse(res, errors.TYPE_NATIVE, errors.ERR_EMPTY_PARAM, '[asset] param is empty');
     }
 
     var setted_limits = {
@@ -167,7 +175,7 @@ app.post('/issue', function(req, res) {
             var tx = new StellarSdk.TransactionBuilder(source)
                 .addOperation(StellarSdk.Operation.payment({
                     destination: dist_manager_account,
-                    amount: parseFloat(amount).toFixed(2).toString(),
+                    amount: parseFloat(amount/100).toFixed(2).toString(),
                     asset: new StellarSdk.Asset(asset, source.accountId())
                 }))
                 .build();

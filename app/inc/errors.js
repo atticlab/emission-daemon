@@ -3,6 +3,7 @@ module.exports = {
 
     ERR_BAD_PARAM:                  100,
     ERR_UNAUTHORIZED:               101,
+    ERR_EMPTY_PARAM:                102,
 
 
     TYPE_STELLAR:                   20,
