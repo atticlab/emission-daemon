@@ -1,9 +1,12 @@
 module.exports = {
     TYPE_NATIVE:                    10,
 
-    ERR_BAD_PARAM:                  100,
-    ERR_UNAUTHORIZED:               101,
-    ERR_EMPTY_PARAM:                102,
+    ERR_UNAUTHORIZED:               100,
+    ERR_BAD_ACC_PARAM:              101,
+    ERR_BAD_AMOUNT_PARAM:           102,
+    ERR_EMPTY_ACC_PARAM:            103,
+    ERR_EMPTY_AMOUNT_PARAM:         104,
+    ERR_EMPTY_ASSET_PARAM:          105,
 
 
     TYPE_STELLAR:                   20,
@@ -15,9 +18,9 @@ module.exports = {
     ERR_BAD_AGENT_TYPE:             204,
     ERR_RESTRICTED:                 205,
 
-    ERR_MAX_OPERATION_LIMIT:        301,
-    ERR_DAILY_OPERATION_LIMIT:      302,
-    ERR_MONTHLY_OPERATION_LIMIT:    303,
-    OP_BLOCKED:                     304,
+    ERR_MAX_OPERATION_LIMIT:        206,
+    ERR_DAILY_OPERATION_LIMIT:      207,
+    ERR_MONTHLY_OPERATION_LIMIT:    208,
+    OP_BLOCKED:                     209,
 
 }

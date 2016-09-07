@@ -46,24 +46,24 @@ app.post('/issue', function(req, res) {
     var asset  = req.body.asset;
 
     if (typeof dist_manager_account == 'undefined' || !dist_manager_account) {
-        return errorResponse(res, errors.TYPE_NATIVE, errors.ERR_EMPTY_PARAM, '[accountId] param is empty');
+        return errorResponse(res, errors.TYPE_NATIVE, errors.ERR_EMPTY_ACC_PARAM, '[accountId] param is empty');
     }
 
     if (!StellarSdk.Keypair.isValidPublicKey(dist_manager_account)) {
-        return errorResponse(res, errors.TYPE_NATIVE, errors.ERR_BAD_PARAM, '[accountId] param is invalid');
+        return errorResponse(res, errors.TYPE_NATIVE, errors.ERR_BAD_ACC_PARAM, '[accountId] param is invalid');
     }
 
     if (typeof amount == 'undefined' || !amount) {
-        return errorResponse(res, errors.TYPE_NATIVE, errors.ERR_EMPTY_PARAM, '[amount] param is empty');
+        return errorResponse(res, errors.TYPE_NATIVE, errors.ERR_EMPTY_AMOUNT_PARAM, '[amount] param is empty');
     }
 
     // Check positive document amount
     if (amount >>> 0 !== parseFloat(amount)) {
-        return errorResponse(res, errors.TYPE_NATIVE, errors.ERR_BAD_PARAM, '[amount] param is not a positive int');
+        return errorResponse(res, errors.TYPE_NATIVE, errors.ERR_BAD_AMOUNT_PARAM, '[amount] param is not a positive int');
     }
 
     if (typeof asset == 'undefined' || !asset.length) {
-        return errorResponse(res, errors.TYPE_NATIVE, errors.ERR_EMPTY_PARAM, '[asset] param is empty');
+        return errorResponse(res, errors.TYPE_NATIVE, errors.ERR_EMPTY_ASSET_PARAM, '[asset] param is empty');
     }
 
     var setted_limits = {
@@ -80,7 +80,7 @@ app.post('/issue', function(req, res) {
         // verify agent type
         .then(function(accountDetails) {
             if(accountDetails.type_i != StellarSdk.xdr.AccountType.accountDistributionAgent().value){
-                return innerError(errors.TYPE_STELLAR, errors.ERR_BAD_AGENT_TYPE, 'BAD AGENT TYPE');
+                return innerError(errors.TYPE_STELLAR, errors.ERR_BAD_AGENT, 'BAD AGENT TYPE');
             }
         })
         // get agent traits
