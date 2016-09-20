@@ -168,7 +168,7 @@ app.post('/issue', function(req, res) {
         })
         // Load bank account
         .then(() => {
-            return horizon.loadAccount(config.bank_public_key)
+            return horizon.loadAccount(config.master_public_key)
         })
         // Issue some money
         .then(source => {
@@ -223,7 +223,7 @@ prompt.get({
     horizon = new StellarSdk.Server(config.horizon_url);
     emission_key = StellarSdk.Keypair.fromSeed(key);
 
-    horizon.loadAccount(config.bank_public_key)
+    horizon.loadAccount(config.master_public_key)
         .then(source => {
             app.listen(config.app.port);
             console.log(colors.green('Listening on port ' + config.app.port));
