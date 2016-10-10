@@ -40,7 +40,37 @@ app.use(function(req, res, next) {
     }
 });
 
-app.post('/issue', function(req, res) {
+app.get('/', function (req, res) {
+    var apiExplorerData = {};
+    var fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
+
+    var emissionUrl = fullUrl + 'emission';
+
+    apiExplorerData[emissionUrl] = {
+        method: 'post',
+        params: {
+            accountId: {
+                description: 'Distribution agent account ID',
+                type: 'string',
+                required: 'true'
+            },
+            amount: {
+                description: 'Amount of emission',
+                type: 'int',
+                required: 'true'
+            },
+            asset: {
+                description: 'Asset of emission',
+                type: 'string',
+                required: 'true'
+            }
+        }
+    };
+
+    res.json(apiExplorerData);
+});
+
+app.post('/emission', function(req, res) {
     var dist_manager_account = req.body.accountId;
     var amount = req.body.amount;
     var asset  = req.body.asset;
