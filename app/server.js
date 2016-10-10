@@ -64,7 +64,8 @@ app.get('/', function (req, res) {
                 type: 'string',
                 required: 'true'
             }
-        }
+        },
+        description: 'Emit money to distribution agent'
     };
 
     res.json(apiExplorerData);
