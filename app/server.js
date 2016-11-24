@@ -23,14 +23,23 @@ function innerError(error_type, error_code, error_text) {
 }
 
 var app = express();
+
+//CORS middleware
+app.use(function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', req.get('origin'));
+    res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With');
+
+    next();
+});
+
 app.use(bodyParser.urlencoded({
     extended: true
 }));
 app.use(bodyParser.json());
 
-app.use(function(req, res, next) {
+app.post('/issue', function(req, res, next) {
     var user = auth(req);
-
     if (!user || user['name'] !== config.auth.user || user['pass'] !== config.auth.password) {
         console.log(colors.red('Unauthorized request'));
 
@@ -41,6 +50,7 @@ app.use(function(req, res, next) {
 });
 
 app.post('/issue', function(req, res) {
+
     var dist_manager_account = req.body.accountId;
     var amount = req.body.amount;
     var asset  = req.body.asset;
