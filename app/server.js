@@ -33,12 +33,12 @@ app.use(function(req, res, next) {
     next();
 });
 
-app.use(bodyParser.urlencoded({
+app.use('/' + config.emission_url, bodyParser.urlencoded({
     extended: true
 }));
-app.use(bodyParser.json());
+app.use('/' + config.emission_url, bodyParser.json());
 
-app.use(function(req, res, next) {
+app.use('/' + config.emission_url, function(req, res, next) {
     var user = auth(req);
 
     if (!user || user['name'] !== config.auth.user || user['pass'] !== config.auth.password) {
@@ -50,7 +50,38 @@ app.use(function(req, res, next) {
     }
 });
 
-app.post('/issue', function(req, res) {
+app.get('/', function (req, res) {
+    var apiExplorerData = {};
+    var fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
+
+    var emissionUrl = fullUrl + config.emission_url;
+
+    apiExplorerData[emissionUrl] = {
+        method: 'post',
+        params: {
+            accountId: {
+                description: 'Distribution agent account ID',
+                type: 'string',
+                required: 'true'
+            },
+            amount: {
+                description: 'Amount of emission in integer (example: for emission 1.00 EUAH amount parameter must be 100)',
+                type: 'int',
+                required: 'true'
+            },
+            asset: {
+                description: 'Asset of emission',
+                type: 'string',
+                required: 'true'
+            }
+        },
+        description: 'Emit money to distribution agent'
+    };
+
+    res.json(apiExplorerData);
+});
+
+app.post('/' + config.emission_url, function(req, res) {
     var dist_manager_account = req.body.accountId;
     var amount = req.body.amount;
     var asset  = req.body.asset;
@@ -194,7 +225,6 @@ app.post('/issue', function(req, res) {
             return horizon.submitTransaction(tx)
         })
         .then(tx => {
-            console.log("Emission successful to " + dist_manager_account);
             res.status(200).json({
                 tx_hash: tx.hash
             });
@@ -219,28 +249,46 @@ app.post('/issue', function(req, res) {
         })
 });
 
-prompt.start();
-prompt.get({
-    description: 'Enter emission key password',
-    name: 'key',
-    hidden: true,
-}, function(err, result) {
-    var key = tools.decryptData(config.emission_key_hash, result.key);
-    if (!key) {
-        console.error(colors.red('WRONG PASSWORD KEY! Shutting down...'));
-    }
+// TEMPORARY comment, while system in test mode
 
-    horizon = new StellarSdk.Server(config.horizon_url);
-    emission_key = StellarSdk.Keypair.fromSeed(key);
+// prompt.start();
+// prompt.get({
+//     description: 'Enter emission key password',
+//     name: 'key',
+//     hidden: true,
+// }, function(err, result) {
+//     var key = tools.decryptData(config.emission_key_hash, result.key);
+//     if (!key) {
+//         console.error(colors.red('WRONG PASSWORD KEY! Shutting down...'));
+//     }
+//
+//     horizon = new StellarSdk.Server(config.horizon_url);
+//     emission_key = StellarSdk.Keypair.fromSeed(key);
+//
+//     horizon.loadAccount(config.master_public_key)
+//         .then(source => {
+//             app.listen(config.app.port);
+//             console.log(colors.green('Listening on port ' + config.app.port));
+//         }, err => {
+//             console.log(colors.red('Cannot load bank_account from Stellar'));
+//         })
+// });
 
-    horizon.loadAccount(config.master_public_key)
-        .then(source => {
-            app.listen(config.app.port);
-            console.log(colors.green('Listening on port ' + config.app.port));
-        }, err => {
-            console.log(colors.red('Cannot load bank_account from Stellar'));
-        })
-});
+var key = tools.decryptData(config.emission_key_hash, config.decrypt_emission_key_password);
+if (!key) {
+    return console.error(colors.red('WRONG PASSWORD KEY! Shutting down...'));
+}
+
+horizon = new StellarSdk.Server(config.horizon_url);
+emission_key = StellarSdk.Keypair.fromSeed(key);
+
+horizon.loadAccount(config.master_public_key)
+    .then(source => {
+        app.listen(config.app.port);
+        console.log(colors.green('Listening on port ' + config.app.port));
+    }, err => {
+        console.log(colors.red('Cannot load bank_account from Stellar'));
+    });
 
 function errorResponse(res, type, code, msg) {
     return res.status(400).json({

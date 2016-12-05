@@ -11,6 +11,7 @@ list:
 
 stop:
 	docker stop smartmoney-emission-node
+	docker rm smartmoney-emission-node
 
 build:
 	docker build -t smartmoney/emission/node  .
