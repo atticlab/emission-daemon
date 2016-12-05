@@ -33,23 +33,6 @@ app.use(function(req, res, next) {
     next();
 });
 
-app.use('/' + config.emission_url, bodyParser.urlencoded({
-    extended: true
-}));
-app.use('/' + config.emission_url, bodyParser.json());
-
-app.use('/' + config.emission_url, function(req, res, next) {
-    var user = auth(req);
-
-    if (!user || user['name'] !== config.auth.user || user['pass'] !== config.auth.password) {
-        console.log(colors.red('Unauthorized request'));
-
-        return errorResponse(res, errors.TYPE_NATIVE, errors.ERR_UNAUTHORIZED, 'Unauthorized request');
-    } else {
-        next();
-    }
-});
-
 app.get('/', function (req, res) {
     var apiExplorerData = {};
     var fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
@@ -79,6 +62,28 @@ app.get('/', function (req, res) {
     };
 
     res.json(apiExplorerData);
+});
+
+app.use(bodyParser.urlencoded({
+    extended: true
+}));
+app.use(bodyParser.json());
+
+app.use('/' + config.emission_url, function(req, res, next) {
+
+    if (req.method == 'OPTIONS') {
+        res.end();
+    }
+
+    var user = auth(req);
+
+    if (!user || user['name'] !== config.auth.user || user['pass'] !== config.auth.password) {
+        console.log(colors.red('Unauthorized request'));
+
+        return errorResponse(res, errors.TYPE_NATIVE, errors.ERR_UNAUTHORIZED, 'Unauthorized request');
+    } else {
+        next();
+    }
 });
 
 app.post('/' + config.emission_url, function(req, res) {
