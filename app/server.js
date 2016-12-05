@@ -38,8 +38,9 @@ app.use(bodyParser.urlencoded({
 }));
 app.use(bodyParser.json());
 
-app.post('/issue', function(req, res, next) {
+app.use(function(req, res, next) {
     var user = auth(req);
+
     if (!user || user['name'] !== config.auth.user || user['pass'] !== config.auth.password) {
         console.log(colors.red('Unauthorized request'));
 
@@ -50,7 +51,6 @@ app.post('/issue', function(req, res, next) {
 });
 
 app.post('/issue', function(req, res) {
-
     var dist_manager_account = req.body.accountId;
     var amount = req.body.amount;
     var asset  = req.body.asset;
