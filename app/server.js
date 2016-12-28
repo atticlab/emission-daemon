@@ -254,46 +254,49 @@ app.post('/' + config.emission_url, function(req, res) {
         })
 });
 
-// TEMPORARY comment, while system in test mode
-
-// prompt.start();
-// prompt.get({
-//     description: 'Enter emission key password',
-//     name: 'key',
-//     hidden: true,
-// }, function(err, result) {
-//     var key = tools.decryptData(config.emission_key_hash, result.key);
-//     if (!key) {
-//         console.error(colors.red('WRONG PASSWORD KEY! Shutting down...'));
-//     }
-//
-//     horizon = new StellarSdk.Server(config.horizon_url);
-//     emission_key = StellarSdk.Keypair.fromSeed(key);
-//
-//     horizon.loadAccount(config.master_public_key)
-//         .then(source => {
-//             app.listen(config.app.port);
-//             console.log(colors.green('Listening on port ' + config.app.port));
-//         }, err => {
-//             console.log(colors.red('Cannot load bank_account from Stellar'));
-//         })
-// });
-
-var key = tools.decryptData(config.emission_key_hash, config.decrypt_emission_key_password);
-if (!key) {
-    return console.error(colors.red('WRONG PASSWORD KEY! Shutting down...'));
-}
-
-horizon = new StellarSdk.Server(config.horizon_url);
-emission_key = StellarSdk.Keypair.fromSeed(key);
-
-horizon.loadAccount(config.master_public_key)
-    .then(source => {
-        app.listen(config.app.port);
-        console.log(colors.green('Listening on port ' + config.app.port));
-    }, err => {
-        console.log(colors.red('Cannot load bank_account from Stellar'));
-    });
+prompt.start();
+prompt.get({
+    description: 'Enter a mnemonic phrase',
+    name: 'key',
+    hidden: true,
+}, function(err, result) {
+    try {
+        var seed = StellarSdk.getSeedFromMnemonic(result.key);
+    } catch (err) {
+        return console.error(colors.red(err));
+    }
+    if (!seed) {
+        console.error(colors.red('CAN NOT GET SEED! Shutting down...'));
+    }
+    horizon = new StellarSdk.Server(config.horizon_url);
+    emission_key = StellarSdk.Keypair.fromSeed(seed);
+    horizon.accounts().accountId(config.master_public_key).call()
+        .then(function (master) {
+            var is_signed = false;
+            if (typeof master.signers != 'undefined') {
+                master.signers.forEach(function (signer) {
+                    if (signer.weight == StellarSdk.xdr.SignerType.signerEmission().value &&
+                        signer.public_key == emission_key.accountId()
+                    ) {
+                        is_signed = true;
+                    }
+                });
+            }
+            return is_signed;
+        })
+        .then(function (is_signed) {
+            if (!is_signed) {
+                return console.error(colors.red('ERROR: BAD ACCOUNT TYPE'));
+            }
+            horizon.loadAccount(config.master_public_key)
+                .then(source => {
+                    app.listen(config.app.port);
+                    console.log(colors.green('Listening on port ' + config.app.port));
+                }, err => {
+                    console.log(colors.red('Cannot load bank_account from Stellar'));
+                });
+        });
+});
 
 function errorResponse(res, type, code, msg) {
     return res.status(400).json({
