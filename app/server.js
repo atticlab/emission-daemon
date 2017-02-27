@@ -37,7 +37,7 @@ app.get('/', function (req, res) {
     var apiExplorerData = {};
     var fullUrl = req.protocol + '://' + req.get('host') + req.originalUrl;
 
-    var emissionUrl = fullUrl + config.emission_url;
+    var emissionUrl = fullUrl + config.emission_path;
 
     apiExplorerData[emissionUrl] = {
         method: 'post',
@@ -69,7 +69,7 @@ app.use(bodyParser.urlencoded({
 }));
 app.use(bodyParser.json());
 
-app.use('/' + config.emission_url, function(req, res, next) {
+app.use('/' + config.emission_path, function(req, res, next) {
 
     if (req.method == 'OPTIONS') {
         res.end();
@@ -86,7 +86,7 @@ app.use('/' + config.emission_url, function(req, res, next) {
     }
 });
 
-app.post('/' + config.emission_url, function(req, res) {
+app.post('/' + config.emission_path, function(req, res) {
     var dist_manager_account = req.body.accountId;
     var amount = req.body.amount;
     var asset  = req.body.asset;
@@ -214,7 +214,7 @@ app.post('/' + config.emission_url, function(req, res) {
         })
         // Load bank account
         .then(() => {
-            return horizon.loadAccount(config.master_public_key)
+            return horizon.loadAccount(config.master_key)
         })
         // Issue some money
         .then(source => {
@@ -270,7 +270,7 @@ prompt.get({
     }
     horizon = new StellarSdk.Server(config.horizon_url);
     emission_key = StellarSdk.Keypair.fromSeed(seed);
-    horizon.accounts().accountId(config.master_public_key).call()
+    horizon.accounts().accountId(config.master_key).call()
         .then(function (master) {
             var is_signed = false;
             if (typeof master.signers != 'undefined') {
@@ -288,7 +288,7 @@ prompt.get({
             if (!is_signed) {
                 return console.error(colors.red('ERROR: BAD ACCOUNT TYPE'));
             }
-            horizon.loadAccount(config.master_public_key)
+            horizon.loadAccount(config.master_key)
                 .then(source => {
                     app.listen(config.app.port);
                     console.log(colors.green('Listening on port ' + config.app.port));

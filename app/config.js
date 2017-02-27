@@ -9,8 +9,8 @@ config.auth = {
     password: "password"
 };
 
-config.emission_url = 'issue';
-config.horizon_url       = 'http://blockchain.smartmoney.com.ua:80';
-config.master_public_key = 'GAWIB7ETYGSWULO4VB7D6S42YLPGIC7TY7Y2SSJKVOTMQXV5TILYWBUA';
+config.emission_path = process.env.EMISSION_PATH;
+config.horizon_url = process.env.HORIZON_HOST;
+config.master_key = process.env.MASTER_KEY;
 
 module.exports = config;
