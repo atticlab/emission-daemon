@@ -256,7 +256,7 @@ app.post('/' + config.emission_path, function(req, res) {
 
 prompt.start();
 prompt.get({
-    description: 'Enter a mnemonic phrase',
+    description: 'Enter mnemonic phrase of emission key',
     name: 'key',
     hidden: true,
 }, function(err, result) {
